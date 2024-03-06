@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <title>Chat with GPT</title>
+    <style>
+        body {
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 水平居中 */
+        }
+
+        #HEADER {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+            width: 100%; /* 保持与chatWrapper相同的宽度 */
+        }
+
+        #chatArea {
+            width: 94%;
+            height: 50vh;
+            flex-grow: 1;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-y: scroll;
+            margin-bottom: 10px; /* 留出一些空间给recordButton */
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: left;
+            clear: both;
+        }
+
+        .user {
+            background-color: #efc589;
+            display: inline-block;
+            text-align: right; /* 用户的文本从右到左 */
+            float: right; /* 使用户的消息框浮动到右侧 */
+            clear: both; /* 避免与其他浮动元素相互影响 */
+        }
+
+        .gpt {
+            background-color: #133673;
+            display: inline-block;
+            text-align: left; /* GPT的文本从左到右 */
+            clear: both; /* 避免与其他浮动元素相互影响 */
+            color: #eeeeee;
+        }
+
+        button {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+
+        button:hover {
+            background-color: #555;
+        }
+
+        #recordButton {
+            font-size: 30px;
+            position: relative; /* 绝对定位 */
+            bottom: 10px; /* 将其放置在chatArea的底部外部 */
+            left: 8%; /* 从左侧开始50%的位置 */
+            transform: translateX(-50%); /* 水平居中 */
+        }
+
+        #autoPlayToggle {
+            font-size: 35px;
+            cursor: pointer;
+            position: relative; /* 绝对定位 */
+            bottom: 0px; /* 将其放置在chatArea的底部外部 */
+        }
+
+        .mute {
+            color: #b90000;
+        }
+
+        .not-mute {
+            color: #00c011;
+        }
+
+        #buttonContainer {
+            display: flex;
+            justify-content: space-between; /* 这将确保子元素之间的空间是均匀的 */
+            margin: 50px auto; /* 自动的左右边距使容器在页面中居中 */
+        }
+    </style>
+</head>
+
+<body>
+<div id="HEADER">
+    <h1>GPT CHAT ROOM</h1>
+</div>
+
+<div id="chatArea"></div>
+
+<div id="buttonContainer">
+    <!-- 语音识别按钮 -->
+    <button id="recordButton" onclick="toggleRecording()">Start Recording</button>
+    <!-- 音频播放按钮 一个喇叭状的图形 -->
+    <i id="autoPlayToggle" class="fas fa-volume-mute mute" onclick="toggleAutoPlay()"></i>
+</div>
+
+
+<script>
+    //#TODO 初始化语音识别参数
+    let isRecording = false; //判断是否在进行语音识别
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)();
+    recognition.lang = 'en-US';//识别语言为英语
+    recognition.interimResults = false;//在识别完成后返回结果
+    recognition.maxAlternatives = 1;//每次识别只返回一个最佳结果
+
+    //#TODO 识别成功-返回结果到聊天框
+    recognition.onresult = function (event) {
+        const speechToText = event.results[0][0].transcript;//获取识别的文字
+        addMessage("user", speechToText);//添加到聊天框中
+        sendMessage(speechToText);//提交到服务器
+    };
+
+    //#TODO 识别失败--报错
+    recognition.onerror = function (event) {
+        console.error('Speech recognition error', event);
+    };
+
+    //#TODO 根据语音识别状态更改按钮显示内容
+    recognition.onend = function () {
+        isRecording = false;// 设置标志为false，表示不再录音
+        document.getElementById("recordButton").textContent = "Start Recording";// 更新按钮的文本为“Start Recording”
+    };
+
+    //#TODO 开始、结束录音
+    let timerId = null;
+
+    function toggleRecording() {
+        window.speechSynthesis.cancel();
+        if (isRecording) {
+            recognition.stop(); // 停止录音
+            clearTimeout(timerId);//结束语音输入时清除定时器
+        } else {
+            recognition.start(); // 开始录音
+            document.getElementById("recordButton").textContent = "Stop Recording";
+            isRecording = true;
+
+            // 清除现有的定时器，确保不会有多个定时器同时运行
+            clearTimeout(timerId);
+
+            // 设置一个新的定时器
+            timerId = setTimeout(() => {
+                if (isRecording) {
+                    recognition.stop();
+                }
+            }, 60000);  // 设置为60000毫秒
+        }
+    }
+
+    //todo 自动播放的开关
+    let isAutoPlayEnabled = false; // 默认为关闭状态
+    function toggleAutoPlay() {
+        isAutoPlayEnabled = !isAutoPlayEnabled; // 切换状态
+        const iconElement = document.getElementById("autoPlayToggle");
+
+        if (iconElement.classList.contains("fa-volume-mute")) {
+            // 如果当前是静音图标，则切换为非静音图标
+            iconElement.classList.remove("fa-volume-mute", "mute");
+            iconElement.classList.add("fa-volume-up", "not-mute");
+        } else {
+            // 如果当前是非静音图标，则切换为静音图标，并且暂停播放
+            iconElement.classList.remove("fa-volume-up", "not-mute");
+            iconElement.classList.add("fa-volume-mute", "mute");
+        }
+        if (isAutoPlayEnabled===false){
+            window.speechSynthesis.cancel();
+        }
+    }
+
+    function addMessage(sender, message) {
+        const chatArea = document.getElementById("chatArea");
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "message " + sender;
+        messageDiv.innerHTML = `<strong>${sender.toUpperCase()}:</strong> ${message}`;
+        chatArea.appendChild(messageDiv);//将新消息添加到聊天区域
+
+        // 添加清除浮动的div
+        const clearDiv = document.createElement("div");
+        clearDiv.style.clear = "both";
+        chatArea.appendChild(clearDiv);
+        chatArea.scrollTop = chatArea.scrollHeight;//滚动聊天区域以显示最新消息
+    }
+
+    function sendMessage(userInput) {
+        fetch('/get_gpt_reply', { // 使用 fetch API 发送一个 POST 请求到 '/get_gpt_reply' 路由。
+            method: 'POST', // 指定请求方法为 POST
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded' // 设置请求头部以指定内容类型为 form-encoded
+            },
+            body: `user_input=${encodeURIComponent(userInput)}`// 在请求体中发送用户输入，经过 URL 编码以确保安全传输
+        })
+            .then(response => response.json()) // 从服务器接收到的json响应转换为JS对象
+            .then(data => {
+                console.log(data.content.text);// 打印从服务器接收到的 GPT 文本和音频数据。
+                addMessage("gpt", data.content.text);
+
+                // 如果允许播放音频，就播放音频。
+                if (isAutoPlayEnabled) {
+                    const synth = window.speechSynthesis;
+                    const utterThis = new SpeechSynthesisUtterance(data.content.text);
+                    utterThis.pitch = 10;
+                    synth.speak(utterThis);
+                }
+            });
+    }
+
+</script>
+</body>
+</html>

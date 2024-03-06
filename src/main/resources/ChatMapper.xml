@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.OralGPT.mapper.ChatMapper">
+    <resultMap id="ChatResultMap" type="com.example.OralGPT.model.Chat">  <!-- 这里定义了一个名为 ChatResultMap 的结果映射，表示该映射将被命名为 UserResultMap，并将映射的结果类型设置为 User 类型（即 User.class）-->
+        <id column="id" property="id"/> <!--定义主键映射的元素。它表示将数据库查询结果中的 id 列映射到 User 对象的 id 属性上-->
+        <result column="user_id" property="user_id"/>
+        <result column="user_input" property="user_input"/>
+        <result column="gpt_response" property="gpt_response"/>
+        <result column="timestamp" property="timestamp"/>
+    </resultMap>
+
+    <select id="getChatById" resultMap="ChatResultMap">
+        SELECT * FROM chats WHERE id = #{id}
+    </select>
+    
+    <insert id="insertChat" parameterType="com.example.OralGPT.model.Chat">
+        INSERT INTO chats (user_id,user_input, gpt_response)
+        VALUES (#{user_id},#{user_input},#{gpt_response})
+    </insert>
+</mapper>
