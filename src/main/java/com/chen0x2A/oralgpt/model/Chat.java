@@ -1,4 +1,4 @@
-package com.example.OralGPT.model;
+package com.chen0x2A.oralgpt.model;
 
 import java.sql.Timestamp;
 
@@ -22,6 +22,10 @@ public class Chat {
         this.user_id = userid;
         this.user_input = userInput;
         this.gpt_response = gpt_response;
+    }
+
+    public Chat(){
+
     }
 
     @Override

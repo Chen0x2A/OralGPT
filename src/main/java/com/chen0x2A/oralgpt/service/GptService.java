@@ -1,4 +1,4 @@
-package com.example.OralGPT.service;
+package com.chen0x2A.oralgpt.service;
 
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import org.springframework.stereotype.Service;
@@ -12,39 +12,39 @@ import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.image.CreateImageRequest;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+
 @Service
 public class GptService {
 
 
-    private List<ChatMessage> conversationHistory = new ArrayList<>(); //ChatMessage组成的ArrayList
+    private Map<String, List<ChatMessage>> userConversations = new HashMap<>();
 
     //构造方法
     public GptService() {
     }
 
-    public String chat(String question) {
-        // 如果历史消息超过10条，仅保留最后10条
-        if (conversationHistory.size() > 10) {
-            conversationHistory = conversationHistory.subList(conversationHistory.size() - 10, conversationHistory.size());
+    public String chat(String question, String userid) {
+        List<ChatMessage> conversationHistory = userConversations.getOrDefault(userid, new ArrayList<>());
+
+        if (conversationHistory.size() > 5) {
+            conversationHistory = conversationHistory.subList(conversationHistory.size() - 5, conversationHistory.size());
         }
 
-        // 添加新的用户消息到历史
         conversationHistory.add(new ChatMessage(ChatMessageRole.USER.value(), question));
         ChatCompletionResult result = createChatCompletion(conversationHistory);
-        // 获取并添加模型的回应到历史
         String resp = result.getChoices().get(0).getMessage().getContent();
         conversationHistory.add(new ChatMessage(ChatMessageRole.ASSISTANT.value(), resp));
+
         System.out.println(question);
         System.out.println(resp);
+        userConversations.put(userid, conversationHistory);
+
         return resp;
     }
 
-    public ChatCompletionResult createChatCompletion(List<ChatMessage> messages) {
 
+    public ChatCompletionResult createChatCompletion(List<ChatMessage> messages) {
         String apiToken = System.getenv("OPENAI_API_KEY");
         OpenAiService service = new OpenAiService(apiToken);
         ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
@@ -56,6 +56,5 @@ public class GptService {
                 .build();
         return service.createChatCompletion(chatCompletionRequest);
     }
-
 }
 

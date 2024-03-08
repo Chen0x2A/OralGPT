@@ -4,6 +4,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <title>Chat with GPT</title>
     <style>
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            transition: backdrop-filter 1s;
+        }
+        #overlay.hide {
+            backdrop-filter: blur(0px);
+            transition: backdrop-filter 1s;
+        }
         body {
             min-height: 100vh;
             font-family: Arial, sans-serif;
@@ -35,6 +51,17 @@
             margin-bottom: 10px; /* 留出一些空间给recordButton */
         }
 
+        #nicknameInput {
+            width: 300px;
+            margin: 0 auto; /* This will center the div */
+        }
+
+        #nicknameInput input, #nicknameInput button {
+            width: 100%;
+            height: 40px;
+            font-size: 18px;
+            margin: 10px 0;
+        }
         .message {
             margin: 10px 0;
             padding: 10px;
@@ -89,6 +116,16 @@
             bottom: 0px; /* 将其放置在chatArea的底部外部 */
         }
 
+        #recordButton, #autoPlayToggle {
+            backdrop-filter: blur(10px);
+            transition: backdrop-filter 1s;
+        }
+
+        #recordButton.hide, #autoPlayToggle.hide {
+            backdrop-filter: blur(0px);
+            transition: backdrop-filter 1s;
+        }
+
         .mute {
             color: #b90000;
         }
@@ -106,6 +143,7 @@
 </head>
 
 <body>
+
 <div id="HEADER">
     <h1>GPT CHAT ROOM</h1>
 </div>
@@ -119,6 +157,12 @@
     <i id="autoPlayToggle" class="fas fa-volume-mute mute" onclick="toggleAutoPlay()"></i>
 </div>
 
+<div id="overlay">
+    <div id="nicknameInput">
+        <input type="text" id="userid" placeholder="enter your preferred name here.......">
+        <button onclick="sendNickname()">Submit</button>
+    </div>
+</div>
 
 <script>
     //#TODO 初始化语音识别参数
@@ -170,6 +214,17 @@
             }, 60000);  // 设置为60000毫秒
         }
     }
+    //
+    let userid = ""; // Add this line to declare a global variable for userid
+
+    function sendNickname() {
+        userid = document.getElementById('userid').value;
+        const overlay = document.getElementById('overlay');
+        overlay.style.display = 'none'; // Add this line
+        overlay.classList.add('hide');
+        document.getElementById('recordButton').classList.add('hide');
+        document.getElementById('autoPlayToggle').classList.add('hide');
+    }
 
     //todo 自动播放的开关
     let isAutoPlayEnabled = false; // 默认为关闭状态
@@ -195,7 +250,11 @@
         const chatArea = document.getElementById("chatArea");
         const messageDiv = document.createElement("div");
         messageDiv.className = "message " + sender;
-        messageDiv.innerHTML = `<strong>${sender.toUpperCase()}:</strong> ${message}`;
+        if (sender === "user") {
+            messageDiv.innerHTML = `<strong>${userid.toUpperCase()}:</strong> ${message}`;
+        } else {
+            messageDiv.innerHTML = `<strong>${sender.toUpperCase()}:</strong> ${message}`;
+        }
         chatArea.appendChild(messageDiv);//将新消息添加到聊天区域
 
         // 添加清除浮动的div
@@ -211,7 +270,7 @@
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded' // 设置请求头部以指定内容类型为 form-encoded
             },
-            body: `user_input=${encodeURIComponent(userInput)}`// 在请求体中发送用户输入，经过 URL 编码以确保安全传输
+            body: `user_input=${encodeURIComponent(userInput)}&userid=${encodeURIComponent(userid)}`// 在请求体中发送用户输入，经过 URL 编码以确保安全传输
         })
             .then(response => response.json()) // 从服务器接收到的json响应转换为JS对象
             .then(data => {

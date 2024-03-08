@@ -1,4 +1,4 @@
-package com.example.OralGPT.model;
+package com.chen0x2A.oralgpt.model;
 
 public class PathConstant {
     public static class MODEL {

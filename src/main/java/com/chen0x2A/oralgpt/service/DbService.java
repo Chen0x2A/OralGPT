@@ -1,6 +1,6 @@
-package com.example.OralGPT.service;
-import com.example.OralGPT.model.Chat;
-import com.example.OralGPT.mapper.ChatMapper;
+package com.chen0x2A.oralgpt.service;
+import com.chen0x2A.oralgpt.mapper.ChatMapper;
+import com.chen0x2A.oralgpt.model.Chat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +15,7 @@ public class DbService {
         chatMapper.insertChat(chat);
     }
 
-    public void getChatById(int id) {
-        chatMapper.getChatById(id);
+    public Chat getChatById(int id) {
+        return chatMapper.getChatById(id);
     }
 }

@@ -1,4 +1,4 @@
-package com.example.OralGPT;
+package com.chen0x2A.oralgpt;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
